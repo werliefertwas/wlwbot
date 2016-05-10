@@ -57,12 +57,12 @@ func insert(words []string) string {
 		panic(err)
 	}
 
-	// could not get this to work
-	// writerErr := csv.NewWriter(file).Write(row)
-	// if writerErr != nil {
-	// 	return writerErr.Error()
-	// }
-	file.WriteString(words[1] + "\n")
+	writer := csv.NewWriter(file)
+	writerErr := writer.Write(row)
+	if writerErr != nil {
+		return writerErr.Error()
+	}
+	writer.Flush()
 
 	return "inserted"
 }
