@@ -48,10 +48,9 @@ func remind(text string) {
 	jsonMsg, _ := json.Marshal(&ChatMsg{text})
 	msgReader := bytes.NewReader(jsonMsg)
 	client := &http.Client{}
-	r, err := client.Post(hook, "application/json", msgReader)
-	log.Println(err)
-	log.Println(r)
-	log.Println(string(jsonMsg))
+	r, _ := client.Post(hook, "application/json", msgReader)
+	// l, _ := httputil.DumpResponse(r, false)
+	log.Println(r.StatusCode, r.Header["X-Request-Id"][0], string(jsonMsg))
 }
 
 func main() {
@@ -61,9 +60,7 @@ func main() {
 	for true {
 		csv, differs := loader.Load()
 
-		log.Println("Checking cronjobs")
 		if differs {
-			log.Println("Loading cronjobs")
 			cronJobs.Stop()
 			cronJobs = cron.New()
 			for _, task := range csv {
