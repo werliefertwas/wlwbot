@@ -14,10 +14,10 @@ import (
 
 const (
 	helpText = `
-- help: see this
-- list: list all active jobs`
-	botPrefix = "reminder "
-	filePath  = "../timetable.csv"
+    reminder help: see this
+    reminder list: list all active jobs
+    reminder insert "*/10 * * * * *","Every 10 seconds!": activate new job`
+	filePath = "../timetable.csv"
 )
 
 // ChatMsg is converted to JSON and POSTed to hook
@@ -26,13 +26,27 @@ type ChatMsg struct {
 }
 
 var routes = map[string]func([]string) string{
-	"help": help,
-	"list": list}
+	"help":   help,
+	"list":   list,
+	"insert": insert}
 
 func help(words []string) string {
 	log.Println("help")
-	log.Println(words[1:])
 	return helpText
+}
+
+func insert(words []string) string {
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0600)
+	defer file.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	row := words[1] + "\n"
+
+	file.WriteString(row)
+
+	return "added"
 }
 
 func list(words []string) string {
@@ -56,6 +70,7 @@ func list(words []string) string {
 }
 
 func route(words []string) string {
+	log.Println(words)
 	return routes[words[0]](words)
 }
 
@@ -64,14 +79,14 @@ func serveStatus(w http.ResponseWriter, req *http.Request) {
 }
 
 func extractWords(text string) []string {
-	return strings.SplitN(strings.TrimLeft(text, botPrefix), " ", 2)
+	return strings.SplitN(text, " ", 3)[1:]
 }
 
 func serveBot(w http.ResponseWriter, r *http.Request) {
 	l, _ := httputil.DumpRequest(r, true)
 	log.Println(string(l))
-	msg := &ChatMsg{
-		route(extractWords(r.FormValue("text")))}
+	t := r.FormValue("text")
+	msg := &ChatMsg{route(extractWords(t))}
 	msgJSON, _ := json.Marshal(msg)
 	w.Write([]byte(msgJSON))
 }
