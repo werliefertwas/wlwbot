@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/robfig/cron"
 )
 
 const (
@@ -18,7 +19,7 @@ const (
     reminder help: see this
     reminder insert "*/10 * * * * *","Every 10 seconds!": activate new job
     reminder list: list all active jobs with index
-		reminder remove 0: remove job at index 0`
+    reminder remove 0: remove job at index 0`
 	filePath = "../timetable.csv"
 )
 
@@ -39,15 +40,30 @@ func help(words []string) string {
 }
 
 func insert(words []string) string {
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	row, readerErr := csv.NewReader(strings.NewReader(words[1])).Read()
+	if readerErr != nil {
+		return readerErr.Error()
+	}
+	if len(row) != 2 {
+		return "row needs 2 columns"
+	}
+	_, cronErr := cron.Parse(row[0])
+	if cronErr != nil {
+		return cronErr.Error()
+	}
+
+	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	defer file.Close()
 	if err != nil {
 		panic(err)
 	}
 
-	row := words[1] + "\n"
-
-	file.WriteString(row)
+	// could not get this to work
+	// writerErr := csv.NewWriter(file).Write(row)
+	// if writerErr != nil {
+	// 	return writerErr.Error()
+	// }
+	file.WriteString(words[1] + "\n")
 
 	return "inserted"
 }
