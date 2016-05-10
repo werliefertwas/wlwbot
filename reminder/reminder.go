@@ -1,14 +1,24 @@
 package main
 
 import (
+	"bytes"
 	"encoding/csv"
+	"encoding/json"
 	"log"
+	"net/http"
 	"os"
 	"reflect"
 	"time"
 
 	"github.com/robfig/cron"
 )
+
+const hook = "http://localhost:8065/hooks/pdusr3nmwfn4pyhrh83dixr1xo"
+
+// ChatMsg is converted to JSON and POSTed to hook
+type ChatMsg struct {
+	Text string `json:"text"`
+}
 
 // CsvLoader provides means to load csv rows from a file
 type CsvLoader struct {
@@ -34,9 +44,19 @@ func (l *CsvLoader) Load() ([][]string, bool) {
 	return rows, differs
 }
 
+func remind(text string) {
+	jsonMsg, _ := json.Marshal(&ChatMsg{text})
+	msgReader := bytes.NewReader(jsonMsg)
+	client := &http.Client{}
+	r, err := client.Post(hook, "application/json", msgReader)
+	log.Println(err)
+	log.Println(r)
+	log.Println(string(jsonMsg))
+}
+
 func main() {
 	loader := &CsvLoader{Address: "timetable.csv"}
-	c := &cron.Cron{}
+	cronJobs := &cron.Cron{}
 
 	for true {
 		csv, differs := loader.Load()
@@ -44,17 +64,17 @@ func main() {
 		log.Println("Checking cronjobs")
 		if differs {
 			log.Println("Loading cronjobs")
-			c.Stop()
-			c = cron.New()
+			cronJobs.Stop()
+			cronJobs = cron.New()
 			for _, task := range csv {
-				cronErr := c.AddFunc(task[0], func() { log.Println(task[1]) })
+				cronErr := cronJobs.AddFunc(task[0], func() { remind(task[1]) })
 				if cronErr != nil {
 					panic(cronErr)
 				}
 			}
-			c.Start()
+			cronJobs.Start()
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(30 * time.Second)
 	}
 }
