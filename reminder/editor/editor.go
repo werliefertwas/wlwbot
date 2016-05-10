@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -15,8 +16,9 @@ import (
 const (
 	helpText = `
     reminder help: see this
-    reminder list: list all active jobs
-    reminder insert "*/10 * * * * *","Every 10 seconds!": activate new job`
+    reminder insert "*/10 * * * * *","Every 10 seconds!": activate new job
+    reminder list: list all active jobs with index
+		reminder remove 0: remove job at index 0`
 	filePath = "../timetable.csv"
 )
 
@@ -28,7 +30,8 @@ type ChatMsg struct {
 var routes = map[string]func([]string) string{
 	"help":   help,
 	"list":   list,
-	"insert": insert}
+	"insert": insert,
+	"remove": remove}
 
 func help(words []string) string {
 	log.Println("help")
@@ -36,7 +39,7 @@ func help(words []string) string {
 }
 
 func insert(words []string) string {
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0600)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	defer file.Close()
 	if err != nil {
 		panic(err)
@@ -46,7 +49,7 @@ func insert(words []string) string {
 
 	file.WriteString(row)
 
-	return "added"
+	return "inserted"
 }
 
 func list(words []string) string {
@@ -63,10 +66,47 @@ func list(words []string) string {
 
 	joinedRows := make([]string, len(rows), len(rows))
 	for i, row := range rows {
-		joinedRows[i] = "    " + strings.Join(row, ", ")
+		joinedRows[i] = "    " + strconv.Itoa(i) + ": " + strings.Join(row, ", ")
 	}
 
 	return strings.Join(joinedRows, "\n")
+}
+
+func remove(words []string) string {
+	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0666)
+	defer file.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	rows, readerErr := csv.NewReader(file).ReadAll()
+	if readerErr != nil {
+		panic(readerErr)
+	}
+
+	deleteAt, iErr := strconv.Atoi(words[1])
+	if iErr != nil {
+		panic(iErr)
+	}
+
+	msg := "not found"
+
+	keptRows := [][]string{}
+	for i, row := range rows {
+		if i != deleteAt {
+			keptRows = append(keptRows, row)
+		} else {
+			msg = "removed"
+		}
+	}
+
+	file.Seek(0, 0)
+	file.Truncate(0)
+	writerErr := csv.NewWriter(file).WriteAll(keptRows)
+	if writerErr != nil {
+		panic(writerErr)
+	}
+	return msg
 }
 
 func route(words []string) string {

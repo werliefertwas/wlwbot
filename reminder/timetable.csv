@@ -1,2 +1,4 @@
 "0 0 * * * *","Zeitzeichen"
 "@every 27m","Pomodoro timer"
+"0 0 16 * * Fri","Beer o'clock"
+"0 55 13 * * Tue","Dev meeting time"

@@ -21,7 +21,7 @@ type ChatMsg struct {
 	Text string `json:"text"`
 }
 
-// CsvLoader provides means to load csv rows from a file
+// CsvLoader provides means to load headerless csv rows from a file
 type CsvLoader struct {
 	FilePath string
 	rows     [][]string
@@ -55,7 +55,7 @@ func remind(text string) {
 }
 
 func main() {
-	loader := &CsvLoader{FilePath: "timetable.csv"}
+	loader := &CsvLoader{FilePath: filePath}
 	cronJobs := &cron.Cron{}
 
 	for true {
