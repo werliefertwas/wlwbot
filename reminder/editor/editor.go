@@ -35,7 +35,6 @@ var routes = map[string]func([]string) string{
 	"remove": remove}
 
 func help(words []string) string {
-	log.Println("help")
 	return helpText
 }
 
@@ -126,7 +125,6 @@ func remove(words []string) string {
 }
 
 func route(words []string) string {
-	log.Println(words)
 	return routes[words[0]](words)
 }
 
