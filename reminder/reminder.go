@@ -14,6 +14,7 @@ import (
 )
 
 const hook = "http://localhost:8065/hooks/pdusr3nmwfn4pyhrh83dixr1xo"
+const filePath = "timetable.csv"
 
 // ChatMsg is converted to JSON and POSTed to hook
 type ChatMsg struct {
@@ -22,13 +23,13 @@ type ChatMsg struct {
 
 // CsvLoader provides means to load csv rows from a file
 type CsvLoader struct {
-	Address string
-	rows    [][]string
+	FilePath string
+	rows     [][]string
 }
 
 // Load returns csv rows and whether they differ from last fetch
 func (l *CsvLoader) Load() ([][]string, bool) {
-	file, err := os.Open(l.Address)
+	file, err := os.Open(l.FilePath)
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +55,7 @@ func remind(text string) {
 }
 
 func main() {
-	loader := &CsvLoader{Address: "timetable.csv"}
+	loader := &CsvLoader{FilePath: "timetable.csv"}
 	cronJobs := &cron.Cron{}
 
 	for true {

@@ -1,1 +1,2 @@
-"*/10 * * * * *","Alle 10 Sekunden!"
+"0 0 * * * *","Zeitzeichen"
+"@every 27m","Pomodoro timer"
